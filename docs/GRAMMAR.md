@@ -7,28 +7,42 @@ program -> stmt* EOF
 ```
 
 ```
-stmt -> blockStmt
-      | ifStmt
-      | fnStmt
-      | returnStmt
+stmt -> block
+      | if
+      | while
+      | for
+      | fn
+      | return
       | exprStmt
 ```
 
 ```
-blockStmt -> "{" stmt* "}"
+block -> "{" stmt* "}"
 ```
 
 ```
-ifStmt -> "if" "(" expr ")" stmt ( "else" stmt )?
+if -> "if" "(" expr ")" stmt ( "else" stmt )?
 ```
 
 ```
-fnStmt -> "fn" IDENTIFIER "(" params ")" stmt
+while -> "while" "(" expr ")" stmt
+```
+
+```
+for -> for "(" ( var | exprStmt | ";" ) expr? ";" expr? ")" stmt
+```
+
+```
+fn -> "fn" IDENTIFIER "(" params ")" stmt
 params -> IDENTIFIER ( "," IDENTIFIER )*
 ```
 
 ```
-returnStmt -> "return" expr ";"
+var -> "var" IDENTIFIER ( "=" expr )? ";"
+```
+
+```
+return -> "return" expr ";"
 ```
 
 ```

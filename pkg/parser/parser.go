@@ -35,6 +35,8 @@ func (p *Parser) Parse() (*ast.Program, error) {
 
 // Stmt -> BlockStmt
 // | IfStmt
+// | WhileStmt
+// | ForStmt
 // | FnStmt
 // | VarStmt
 // | ReturnStmt
@@ -50,11 +52,15 @@ func (p *Parser) parseStmt() (ast.Stmt, error) {
 		return p.parseIfStmt()
 	}
 
-	// ForStmt
-	// TODO ForStmt
-
 	// WhileStmt
-	// TODO WhileStmt
+	if p.matchToken(token.While) {
+		return p.parseWhileStmt()
+	}
+
+	// ForStmt
+	if p.matchToken(token.For) {
+		return p.parseForStmt()
+	}
 
 	// StructStmt
 	// TODO StructStmt
@@ -111,7 +117,7 @@ func (p *Parser) parseIfStmt() (ast.Stmt, error) {
 		return nil, err
 	}
 
-	msg = "expected ')' after condition"
+	msg = "expected ')' after if condition"
 	if _, err := p.expectToken(token.RightParen, msg); err != nil {
 		return nil, err
 	}
@@ -131,6 +137,92 @@ func (p *Parser) parseIfStmt() (ast.Stmt, error) {
 	}
 
 	return ast.IfStmt{Cond: cond, If: ifStmt, Else: elseStmt}, nil
+}
+
+// WhileStmt -> "while" "(" Expr ")" Stmt
+func (p *Parser) parseWhileStmt() (ast.Stmt, error) {
+	msg := "expected '(' after while statement"
+	if _, err := p.expectToken(token.LeftParen, msg); err != nil {
+		return nil, err
+	}
+
+	cond, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+
+	msg = "expected ')' after while condition"
+	if _, err := p.expectToken(token.RightParen, msg); err != nil {
+		return nil, err
+	}
+
+	stmt, err := p.parseStmt()
+	if err != nil {
+		return nil, err
+	}
+
+	return ast.WhileStmt{Cond: cond, Body: stmt}, nil
+}
+
+// ForStmt -> "for" "(" ( ";" | VarStmt | ExprStmt ) Expr? ";" Expr? ")" Stmt
+func (p *Parser) parseForStmt() (ast.Stmt, error) {
+	msg := "expected '(' after for statement"
+	if _, err := p.expectToken(token.LeftParen, msg); err != nil {
+		return nil, err
+	}
+
+	// ( ";" | VarStmt | ExprStmt )
+	var init ast.Stmt = nil
+	if p.matchToken(token.Semicolon) {
+		// Do nothing
+	} else if p.matchToken(token.Var) {
+		varStmt, err := p.parseVarStmt()
+		if err != nil {
+			return nil, err
+		}
+		init = varStmt
+	} else {
+		exprStmt, err := p.parseExprStmt()
+		if err != nil {
+			return nil, err
+		}
+		init = exprStmt
+	}
+
+	// Expr? ";"
+	var cond ast.Expr = nil
+	if !p.checkToken(token.Semicolon) {
+		expr, err := p.parseExpr()
+		if err != nil {
+			return nil, err
+		}
+		cond = expr
+	}
+	msg = "expected ';' after for condition"
+	if _, err := p.expectToken(token.Semicolon, msg); err != nil {
+		return nil, err
+	}
+
+	// Expr? ")"
+	var inc ast.Expr = nil
+	if !p.checkToken(token.RightParen) {
+		expr, err := p.parseExpr()
+		if err != nil {
+			return nil, err
+		}
+		inc = expr
+	}
+	msg = "expected ')' after for increment"
+	if _, err := p.expectToken(token.RightParen, msg); err != nil {
+		return nil, err
+	}
+
+	stmt, err := p.parseStmt()
+	if err != nil {
+		return nil, err
+	}
+
+	return ast.ForStmt{Init: init, Cond: cond, Inc: inc, Body: stmt}, nil
 }
 
 // FnStmt -> "fn" Ident "(" Params? ")"
@@ -431,7 +523,7 @@ func (p *Parser) parseBitShift() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		expr = ast.BinaryExpr{Left: expr, Op: op, Right: right}
 	}
 

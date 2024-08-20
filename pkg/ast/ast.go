@@ -17,6 +17,18 @@ type IfStmt struct {
 	Else Stmt
 }
 
+type WhileStmt struct {
+	Cond Expr
+	Body Stmt
+}
+
+type ForStmt struct {
+	Init Stmt
+	Cond Expr
+	Inc  Expr
+	Body Stmt
+}
+
 type FnStmt struct {
 	Name   token.Token
 	Params []token.Token

@@ -50,6 +50,15 @@ func (p *Parser) parseStmt() (ast.Stmt, error) {
 		return p.parseIfStmt()
 	}
 
+	// ForStmt
+	// TODO ForStmt
+
+	// WhileStmt
+	// TODO WhileStmt
+
+	// StructStmt
+	// TODO StructStmt
+
 	// FnStmt
 	if p.matchToken(token.Fn) {
 		return p.parseFnStmt()
@@ -231,9 +240,9 @@ func (p *Parser) parseExpr() (ast.Expr, error) {
 }
 
 // Assign -> Ident "=" Assign
-// | Equality
+// | LogicalOr
 func (p *Parser) parseAssign() (ast.Expr, error) {
-	expr, err := p.parseEquality()
+	expr, err := p.parseLogicalOr()
 	if err != nil {
 		return nil, err
 	}
@@ -252,6 +261,111 @@ func (p *Parser) parseAssign() (ast.Expr, error) {
 		}
 
 		return ast.AssignExpr{Name: expr.Name, Value: value}, nil
+	}
+
+	return expr, nil
+}
+
+// LogicalOr -> LogicalAnd ( "or" LogicalAnd )*
+func (p *Parser) parseLogicalOr() (ast.Expr, error) {
+	expr, err := p.parseLogicalAnd()
+	if err != nil {
+		return nil, err
+	}
+
+	// ( "or" LogicalAnd )*
+	for p.matchToken(token.Or) {
+		op := p.prevToken()
+		right, err := p.parseLogicalAnd()
+		if err != nil {
+			return nil, err
+		}
+
+		expr = ast.BinaryExpr{Left: expr, Op: op, Right: right}
+	}
+
+	return expr, nil
+}
+
+// LogicalAnd -> BitwiseOr ( "and" BitwiseOr )*
+func (p *Parser) parseLogicalAnd() (ast.Expr, error) {
+	expr, err := p.parseBitwiseOr()
+	if err != nil {
+		return nil, err
+	}
+
+	// ( "and" BitwiseOr )*
+	for p.matchToken(token.And) {
+		op := p.prevToken()
+		right, err := p.parseBitwiseOr()
+		if err != nil {
+			return nil, err
+		}
+
+		expr = ast.BinaryExpr{Left: expr, Op: op, Right: right}
+	}
+
+	return expr, nil
+}
+
+// BitwiseOr -> BitwiseXor ( "|" BitwiseXor )*
+func (p *Parser) parseBitwiseOr() (ast.Expr, error) {
+	expr, err := p.parseBitwiseXor()
+	if err != nil {
+		return nil, err
+	}
+
+	// ( "|" BitwiseXor )*
+	for p.matchToken(token.BitOr) {
+		op := p.prevToken()
+		right, err := p.parseBitwiseXor()
+		if err != nil {
+			return nil, err
+		}
+
+		expr = ast.BinaryExpr{Left: expr, Op: op, Right: right}
+	}
+
+	return expr, nil
+}
+
+// BitwiseXor -> BitwiseAnd ( "^" BitwiseAnd )*
+func (p *Parser) parseBitwiseXor() (ast.Expr, error) {
+	expr, err := p.parseBitwiseAnd()
+	if err != nil {
+		return nil, err
+	}
+
+	// ( "^" BitwiseAnd )*
+	for p.matchToken(token.BitXor) {
+		op := p.prevToken()
+		right, err := p.parseBitwiseAnd()
+		if err != nil {
+			return nil, err
+		}
+
+		expr = ast.BinaryExpr{Left: expr, Op: op, Right: right}
+	}
+
+	return expr, nil
+}
+
+// BitwiseAnd -> Equality ( "&" Equality )*
+func (p *Parser) parseBitwiseAnd() (ast.Expr, error) {
+	expr, err := p.parseEquality()
+	if err != nil {
+		return nil, err
+	}
+
+	// ( "&" Equality )*
+	for p.matchToken(token.BitAnd) {
+		op := p.prevToken()
+		right, err := p.parseEquality()
+		if err != nil {
+			return nil, err
+		}
+
+		expr = ast.BinaryExpr{Left: expr, Op: op, Right: right}
 	}
 
 	return expr, nil
@@ -278,9 +392,9 @@ func (p *Parser) parseEquality() (ast.Expr, error) {
 	return expr, nil
 }
 
-// Comparison -> Term ( ( ">" | ">=" | "<" | "<=" ) Term )*
+// Comparison -> BitShift ( ( ">" | ">=" | "<" | "<=" ) BitShift )*
 func (p *Parser) parseComparison() (ast.Expr, error) {
-	expr, err := p.parseTerm()
+	expr, err := p.parseBitShift()
 	if err != nil {
 		return nil, err
 	}
@@ -292,11 +406,32 @@ func (p *Parser) parseComparison() (ast.Expr, error) {
 		p.matchToken(token.LessEqual) {
 
 		op := p.prevToken()
-		right, err := p.parseTerm()
+		right, err := p.parseBitShift()
 		if err != nil {
 			return nil, err
 		}
 
+		expr = ast.BinaryExpr{Left: expr, Op: op, Right: right}
+	}
+
+	return expr, nil
+}
+
+// BitShift -> Term ( ( ">>" || "<<" ) Term )*
+func (p *Parser) parseBitShift() (ast.Expr, error) {
+	expr, err := p.parseTerm()
+	if err != nil {
+		return nil, err
+	}
+
+	// ( ( ">>" || "<<" ) Term )*
+	for p.matchToken(token.RightShift) || p.matchToken(token.LeftShift) {
+		op := p.prevToken()
+		right, err := p.parseFactor()
+		if err != nil {
+			return nil, err
+		}
+		
 		expr = ast.BinaryExpr{Left: expr, Op: op, Right: right}
 	}
 
@@ -345,11 +480,15 @@ func (p *Parser) parseFactor() (ast.Expr, error) {
 	return expr, nil
 }
 
-// Unary -> ( "!" | "-" ) Unary
+// Unary -> ( "+" | "-" | "!" | "~" ) Unary
 // | Call
 func (p *Parser) parseUnary() (ast.Expr, error) {
 	// ( "!" | "-" ) Unary
-	if p.matchToken(token.Not) || p.matchToken(token.Sub) {
+	if p.matchToken(token.Add) ||
+		p.matchToken(token.Sub) ||
+		p.matchToken(token.Not) ||
+		p.matchToken(token.BitNot) {
+
 		op := p.prevToken()
 		right, err := p.parseUnary()
 		if err != nil {

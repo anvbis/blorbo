@@ -31,32 +31,35 @@ const (
 	GreaterEqual TokenType = "GreaterEqual" // >=
 	Less         TokenType = "Less"         // <
 	LessEqual    TokenType = "LessEqual"    // <=
-	And          TokenType = "And"          // &&
-	Or           TokenType = "Or"           // ||
 
 	// Bitwise operations
-	BitAnd TokenType = "BitAnd" // &
-	BitOr  TokenType = "BitOr"  // |
-	BitXor TokenType = "BitXor" // ^
+	BitAnd     TokenType = "BitAnd"     // &
+	BitOr      TokenType = "BitOr"      // |
+	BitXor     TokenType = "BitXor"     // ^
+	BitNot     TokenType = "BitNot"     // ~
+	RightShift TokenType = "RightShift" // >>
+	LeftShift  TokenType = "LeftShift"  // <<
 
 	// Literals
-	Ident   = "Ident"
-	Number  = "Number"
-	String  = "String"
-	Comment = "Comment"
+	Ident   TokenType = "Ident"
+	Number  TokenType = "Number"
+	String  TokenType = "String"
+	Comment TokenType = "Comment"
 
 	// Keywords
-	Var    = "Var"    // var
-	Return = "Return" // return
-	Fn     = "Fn"     // fn
-	Struct = "Struct" // struct
-	For    = "For"    // for
-	While  = "While"  // while
-	If     = "If"     // if
-	Else   = "Else"   // else
-	Null   = "Null"   // null
-	True   = "True"   // true
-	False  = "False"  // false
+	Var    TokenType = "Var"    // var
+	Return TokenType = "Return" // return
+	Fn     TokenType = "Fn"     // fn
+	Struct TokenType = "Struct" // struct
+	For    TokenType = "For"    // for
+	While  TokenType = "While"  // while
+	If     TokenType = "If"     // if
+	Else   TokenType = "Else"   // else
+	Null   TokenType = "Null"   // null
+	True   TokenType = "True"   // true
+	False  TokenType = "False"  // false
+	And    TokenType = "And"    // and
+	Or     TokenType = "Or"     // or
 )
 
 type Token struct {

@@ -19,6 +19,8 @@ var keywords = map[string]token.TokenType{
 	"null":   token.Null,
 	"true":   token.True,
 	"false":  token.False,
+	"and":    token.And,
+	"or":     token.Or,
 }
 
 func isWhitespace(c byte) bool {
@@ -124,6 +126,9 @@ func (l *Lexer) nextToken() (token.Token, error) {
 		if l.peekChar() == '=' {
 			l.readChar()
 			tok = token.New(token.GreaterEqual, ">=", l.line)
+		} else if l.peekChar() == '>' {
+			l.readChar()
+			tok = token.New(token.RightShift, ">>", l.line)
 		} else {
 			tok = token.New(token.Greater, ">", l.line)
 		}
@@ -131,25 +136,20 @@ func (l *Lexer) nextToken() (token.Token, error) {
 		if l.peekChar() == '=' {
 			l.readChar()
 			tok = token.New(token.LessEqual, "<=", l.line)
+		} else if l.peekChar() == '<' {
+			l.readChar()
+			tok = token.New(token.LeftShift, "<<", l.line)
 		} else {
 			tok = token.New(token.Less, "<", l.line)
 		}
 	case '&':
-		if l.peekChar() == '&' {
-			l.readChar()
-			tok = token.New(token.And, "&&", l.line)
-		} else {
-			tok = token.New(token.BitAnd, "&", l.line)
-		}
+		tok = token.New(token.BitAnd, "&", l.line)
 	case '|':
-		if l.peekChar() == '|' {
-			l.readChar()
-			tok = token.New(token.Or, "||", l.line)
-		} else {
-			tok = token.New(token.BitOr, "|", l.line)
-		}
+		tok = token.New(token.BitOr, "|", l.line)
 	case '^':
 		tok = token.New(token.BitXor, "^", l.line)
+	case '~':
+		tok = token.New(token.BitNot, "~", l.line)
 	case '"':
 		str, err := l.readString()
 		if err != nil {

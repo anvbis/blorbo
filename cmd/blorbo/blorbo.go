@@ -20,6 +20,10 @@ func runScript(src string) error {
 		return errors.New("error: lexer error(s) occurred")
 	}
 
+	for _, tok := range tokens {
+		fmt.Println(tok)
+	}
+
 	p := parser.New(tokens)
 	stmt, err := p.Parse()
 	if err != nil {
